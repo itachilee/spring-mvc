@@ -1,0 +1,36 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit" xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/rabbit
+		http://www.springframework.org/schema/rabbit/spring-rabbit-1.4.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:property-placeholder location="classpath*:rabbit.properties"/>
+
+    <rabbit:connection-factory id="connectionFactory"
+                               host="${rabbit.host}"
+                               port="${rabbit.port}"
+                               username="${rabbit.username}"
+                               password="${rabbit.password}"/>
+
+
+    <rabbit:admin connection-factory="connectionFactory" id="amqpAdmin"/>
+
+    <rabbit:queue id="testQ" durable="true" auto-delete="false" exclusive="false" name="testQ"/>
+
+    <rabbit:direct-exchange name="testEx" durable="true" auto-delete="false" id="testEx">
+        <rabbit:bindings>
+            <rabbit:binding queue="testQ" key="testQ"></rabbit:binding>
+        </rabbit:bindings>
+    </rabbit:direct-exchange>
+
+    <rabbit:template exchange="testEx" id="amqpTemplate" connection-factory="connectionFactory"/>
+
+    <bean id="messageConsumeService" class="com.app.mvc.rabbitmq.MessageConsumeService"/>
+    <rabbit:listener-container connection-factory="connectionFactory" acknowledge="auto">
+        <rabbit:listener ref="messageConsumeService" queues="testQ"/>
+    </rabbit:listener-container>
+</beans>
